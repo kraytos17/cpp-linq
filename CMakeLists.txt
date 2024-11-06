@@ -10,7 +10,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 enable_language(CXX)
 
-add_executable(linq++ src/main.cpp)
+add_executable(linq++ src/main.cpp src/linq.hpp)
 
 include(CTest)
 enable_testing()
