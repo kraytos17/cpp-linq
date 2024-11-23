@@ -46,22 +46,14 @@ int main() {
     int maxNumber = linq::max(numbers);
     std::println("Maximum number: {}", maxNumber);
 
-    try {
-        int first = linq::first(numbers);
-        std::println("First element: {}", first);
-    } catch (const std::out_of_range& e) {
-        std::println("Error: {}", e.what());
-    }
+    auto first = linq::first(numbers);
+    std::println("First element: {}", first.value());
 
     auto firstOrDefault = linq::firstOrDefault(numbers);
     std::println("First element or default: {}", firstOrDefault.value());
 
-    try {
-        int last = linq::last(numbers);
-        std::println("Last element: {}", last);
-    } catch (const std::out_of_range& e) {
-        std::println("Error: {}", e.what());
-    }
+    int last = linq::last(numbers);
+    std::println("Last element: {}", last);
 
     auto lastOrDefault = linq::lastOrDefault(numbers);
     std::println("Last element or default: {}", lastOrDefault.value());

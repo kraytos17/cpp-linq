@@ -16,12 +16,12 @@ namespace linq {
     concept Rangeable = std::ranges::input_range<T>;
 
     template<Rangeable Range, typename Pred>
-    constexpr auto where(Range&& range, Pred&& pred) {
+    constexpr auto where(Range&& range, Pred&& pred) noexcept {
         return std::ranges::ref_view{range} | std::views::filter(std::forward<Pred>(pred));
     }
 
     template<Rangeable Range, typename Proj>
-    constexpr auto select(Range&& range, Proj&& proj) {
+    constexpr auto select(Range&& range, Proj&& proj) noexcept {
         return std::ranges::ref_view{range} | std::views::transform(std::forward<Proj>(proj));
     }
 
@@ -32,14 +32,14 @@ namespace linq {
         if constexpr (std::ranges::sized_range<Range>) {
             res.reserve(std::ranges::size(range));
         }
-        
+
         std::ranges::copy(range, std::back_inserter(res));
         return res;
     }
 
     template<Rangeable Range, typename KeySelector>
     constexpr auto orderBy(Range&& range, KeySelector&& ks) {
-        auto sorted = toVector(range);
+        auto sorted = toVector(std::forward<Range>(range));
         std::ranges::sort(sorted, {}, std::forward<KeySelector>(ks));
 
         return sorted;
@@ -51,11 +51,15 @@ namespace linq {
     }
 
     template<Rangeable Range, typename Pred = std::nullptr_t>
-    constexpr auto count(Range&& range, Pred&& pred = nullptr) {
+    constexpr auto count(Range&& range, Pred&& pred = nullptr) noexcept {
         if constexpr (std::is_same_v<Pred, std::nullptr_t>) {
-            return std::ranges::distance(range);
+            if constexpr (std::ranges::sized_range<Range>) {
+                return std::ranges::size(range);
+            } else {
+                return std::ranges::distance(range);
+            }
         } else {
-            return std::ranges::distance(where(range, std::forward<Pred>(pred)));
+            return std::ranges::count_if(range, std::forward<Pred>(pred));
         }
     }
 
@@ -76,11 +80,13 @@ namespace linq {
     }
 
     template<Rangeable Range>
-    constexpr auto first(Range&& range) -> decltype(*range.begin()) {
-        if (range.begin() == range.end()) {
-            throw std::out_of_range("Range is empty");
+    constexpr auto first(Range&& range) -> std::optional<std::ranges::range_value_t<Range>> {
+        auto it = std::ranges::begin(range);
+        if (it == std::ranges::end(range)) {
+            return std::nullopt;
         }
-        return *range.begin();
+
+        return *it;
     }
 
     template<Rangeable Range>
@@ -88,6 +94,7 @@ namespace linq {
         if (range.begin() == range.end()) {
             return std::nullopt;
         }
+
         return *range.begin();
     }
 
@@ -110,17 +117,21 @@ namespace linq {
     template<Rangeable Range>
     constexpr auto distinct(Range&& range) {
         using T = std::ranges::range_value_t<Range>;
-
         std::unordered_set<T> seen;
-        std::vector<T> res;
+        std::vector<T> result;
 
-        for (const auto& elem: range) {
-            if (seen.insert(elem).second) {
-                res.push_back(elem);
+        if constexpr (std::ranges::sized_range<Range>) {
+            seen.reserve(std::ranges::size(range));
+            result.reserve(std::ranges::size(range));
+        }
+
+        for (auto&& elem: range) {
+            if (seen.insert(std::forward<decltype(elem)>(elem)).second) {
+                result.push_back(std::forward<decltype(elem)>(elem));
             }
         }
 
-        return res;
+        return result;
     }
 
     template<Rangeable Range, typename KeySelector>
@@ -129,20 +140,25 @@ namespace linq {
         using K = std::invoke_result_t<KeySelector, T>;
 
         std::unordered_set<K> seen;
-        std::vector<T> res;
+        std::vector<T> result;
 
-        for (const auto& elem: range) {
-            K key = ks(elem);
-            if (seen.insert(key).second) {
-                res.push_back(elem);
+        if constexpr (std::ranges::sized_range<Range>) {
+            seen.reserve(std::ranges::size(range));
+            result.reserve(std::ranges::size(range));
+        }
+
+        for (auto&& elem: range) {
+            K key = ks(std::forward<decltype(elem)>(elem));
+            if (seen.insert(std::move(key)).second) {
+                result.push_back(std::forward<decltype(elem)>(elem));
             }
         }
 
-        return res;
+        return result;
     }
 
     template<Rangeable Range>
     constexpr auto take(Range&& range, std::size_t n) {
-        return std::views::take(range, n);
+        return std::views::take(std::forward<Range>(range), n);
     }
 } // namespace linq
