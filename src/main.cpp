@@ -1,4 +1,5 @@
 #include <print>
+#include <string>
 #include <vector>
 #include "linq.hpp"
 
@@ -12,57 +13,50 @@ int main() {
 
     auto filtered = linq::where(numbers, [](int n) { return n > 5; });
     std::print("Numbers greater than 5: ");
-    for (int n: filtered) {
+    for (int n: filtered)
         std::print("{} ", n);
-    }
-    std::println();
+    std::print("\n");
 
     auto squared = linq::select(numbers, [](int n) { return n * n; });
     std::print("Squares of numbers: ");
-    for (int n: squared) {
+    for (int n: squared)
         std::print("{} ", n);
-    }
-    std::println();
+    std::print("\n");
 
     auto sorted = linq::orderBy(numbers, [](int n) { return n; });
     std::print("Numbers sorted in ascending order: ");
-    for (const auto& n: sorted) {
+    for (int n: sorted)
         std::print("{} ", n);
-    }
-    std::println();
+    std::print("\n");
 
-    int product = linq::aggregate(numbers, 1, std::multiplies<int>());
-    std::println("Product of all numbers: {}", product);
+    std::print("Product of all numbers: {}\n", linq::aggregate(numbers, 1, std::multiplies<int>()));
+    std::print("Count of numbers greater than 5: {}\n", linq::count(numbers, [](int n) { return n > 5; }));
+    std::print("Sum of all numbers: {}\n", linq::sum(numbers));
 
-    int countGreater5 = linq::count(numbers, [](int n) { return n > 5; });
-    std::println("Count of numbers greater than 5: {}", countGreater5);
+    std::print("Minimum number: {}\n", linq::min(numbers));
+    std::print("Maximum number: {}\n", linq::max(numbers));
 
-    int sum = linq::sum(numbers);
-    std::println("Sum of all numbers: {}", sum);
-
-    int minNumber = linq::min(numbers);
-    std::println("Minimum number: {}", minNumber);
-
-    int maxNumber = linq::max(numbers);
-    std::println("Maximum number: {}", maxNumber);
-
-    auto first = linq::first(numbers);
-    std::println("First element: {}", first.value());
+    auto first = linq::first(numbers).value_or(0);
+    std::print("First element: {}\n", first);
 
     auto firstOrDefault = linq::firstOrDefault(numbers);
-    std::println("First element or default: {}", firstOrDefault.value());
+    std::print("First element or default: {}\n", firstOrDefault);
 
-    int last = linq::last(numbers);
-    std::println("Last element: {}", last);
+    try {
+        std::print("Last element: {}\n", linq::last(numbers).value());
+    } catch (const std::out_of_range&) {
+        std::print("Last element: Out of range\n");
+    }
 
     auto lastOrDefault = linq::lastOrDefault(numbers);
-    std::println("Last element or default: {}", lastOrDefault.value());
+    std::print("Last element or default: {}\n", lastOrDefault);
 
     std::vector<Person> people{{"Alice", 30}, {"Bob", 25}, {"Charlie", 35}, {"Alice", 40}, {"Eve", 28}};
+
     auto uniqueByName = linq::distinctBy(people, [](const Person& p) { return p.name; });
-    std::println("Distinct people by name:\n");
+    std::print("Distinct people by name:\n");
     for (const auto& person: uniqueByName) {
-        std::println("{0} ({1} yrs)", person.name, person.age);
+        std::print("  {} ({} yrs)\n", person.name, person.age);
     }
 
     return 0;
