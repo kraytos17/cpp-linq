@@ -158,4 +158,23 @@ namespace linq {
     auto take(Range&& range, std::size_t n) {
         return std::views::take(std::forward<Range>(range), n);
     }
+
+    template<Rangeable ORange, Rangeable IRange, typename OKeyS, typename IKeyS, typename TRes>
+    auto join(const ORange& outer, const IRange& inner, OKeyS outerKeySel, IKeyS innerKeyS, TRes resSelector) {
+        using OuterVal = std::ranges::range_value_t<ORange>;
+        using InnerVal = std::ranges::range_value_t<IRange>;
+        using ResType = decltype(resSelector(std::declval<OuterVal>(), std::declval<InnerVal>()));
+
+        std::vector<ResType> res;
+        for (const auto& outerElem: outer) {
+            auto outerKey = outerKeySel(outerElem);
+            for (const auto& innerElem: inner) {
+                if (outerKey == innerKeyS(innerElem)) {
+                    res.push_back(resSelector(outerElem, innerElem));
+                }
+            }
+        }
+
+        return res;
+    }
 } // namespace linq
